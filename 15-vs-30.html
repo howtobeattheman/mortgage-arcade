@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>15 Year vs 30 Year — Gavin Hamilton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared.css">
+<style>
+/* ── 15 vs 30 specific styles ── */
+.compare-input-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+@media (max-width: 520px) { .compare-input-cols { grid-template-columns: 1fr; } }
+
+.compare-input-col {
+  border: 1px solid rgba(74,74,74,.15);
+  border-radius: 4px;
+  padding: 1.5rem;
+  background: #faf9f7;
+}
+.compare-input-col.col-15 { border-color: rgba(26,64,102,.2); background: rgba(26,64,102,.02); }
+.compare-input-col.col-30 { border-color: rgba(184,146,74,.3); background: rgba(184,146,74,.03); }
+
+.compare-col-label {
+  font-size: .68rem;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  font-weight: 600;
+  margin-bottom: 1.25rem;
+  padding-bottom: .75rem;
+  border-bottom: 1px solid rgba(74,74,74,.1);
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.compare-col-label::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: .6;
+}
+.col-15 .compare-col-label { color: #1a4066; }
+.col-15 .compare-col-label::before { background: #1a4066; }
+.col-30 .compare-col-label { color: #b8924a; }
+.col-30 .compare-col-label::before { background: #b8924a; }
+
+.compare-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+@media (max-width: 520px) { .compare-cols { grid-template-columns: 1fr; } }
+
+.compare-col-card {
+  background: #fff;
+  border: 1px solid rgba(74,74,74,.15);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.compare-col-header {
+  padding: .65rem 1.1rem;
+  border-bottom: 1px solid rgba(74,74,74,.1);
+  font-size: .65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .14em;
+  background: #faf9f7;
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+}
+.compare-col-header::before {
+  content: '';
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  display: inline-block;
+  opacity: .7;
+}
+.compare-col-header.h-15 { color: #1a4066; }
+.compare-col-header.h-15::before { background: #1a4066; }
+.compare-col-header.h-30 { color: #b8924a; }
+.compare-col-header.h-30::before { background: #b8924a; }
+
+.compare-total-block { padding: 1rem 1.1rem .8rem; border-bottom: 1px solid rgba(74,74,74,.08); }
+.compare-total-label { font-size: .62rem; text-transform: uppercase; letter-spacing: .1em; color: #888; margin-bottom: .3rem; font-weight: 500; }
+.compare-total-amount { font-family: 'DM Mono', monospace; font-size: clamp(1.3rem,3.5vw,2rem); font-weight: 700; color: #1c1c1c; line-height: 1; letter-spacing: -.02em; }
+.compare-total-sub { font-size: .72rem; color: #aaa; margin-top: .2rem; font-weight: 300; }
+.compare-apr { font-family: 'DM Mono', monospace; font-size: .78rem; font-weight: 500; color: #4a4a4a; margin-top: .4rem; }
+
+.compare-line-items { display: flex; flex-direction: column; }
+.compare-line-item { display: flex; flex-direction: column; padding: .6rem 1.1rem; border-bottom: 1px solid rgba(74,74,74,.06); }
+.compare-line-item:last-child { border-bottom: none; }
+.compare-line-label { font-size: .68rem; color: #888; margin-bottom: .15rem; }
+.compare-line-value { font-family: 'DM Mono', monospace; font-size: .88rem; font-weight: 600; color: #1c1c1c; }
+.compare-line-item.pmi-item .compare-line-label { color: #b03020; }
+.compare-line-item.pmi-item .compare-line-value { color: #b03020; }
+
+.diff-callout { display: none; padding: 1rem 1.25rem; background: rgba(184,146,74,.06); border: 1px solid rgba(184,146,74,.35); border-radius: 4px; margin-bottom: 1rem; }
+.diff-callout.show { display: block; }
+.diff-callout p { font-size: .88rem; color: #4a4a4a; line-height: 1.7; font-weight: 300; }
+.diff-callout .diff-amount { font-family: 'DM Mono', monospace; font-weight: 600; color: #1c1c1c; }
+
+.accel-payoff-card {
+  background: #faf9f7;
+  border: 1px solid rgba(184,146,74,.35);
+  border-left: 3px solid #b8924a;
+  border-radius: 4px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1rem;
+}
+.accel-payoff-title { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: #b8924a; margin-bottom: .75rem; }
+.accel-payoff-body { font-size: .88rem; color: #4a4a4a; line-height: 1.75; font-weight: 300; }
+.accel-payoff-body .highlight-num { font-family: 'DM Mono', monospace; font-size: 1rem; font-weight: 700; color: #1c1c1c; }
+.accel-payoff-body .highlight-green { font-family: 'DM Mono', monospace; font-size: 1rem; font-weight: 700; color: #1a6640; }
+
+.pros-cons-grid { display: none; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1rem; }
+.pros-cons-grid.show { display: grid; }
+@media (max-width: 520px) { .pros-cons-grid { grid-template-columns: 1fr; } }
+.pc-col { display: flex; flex-direction: column; gap: .75rem; }
+.pc-card { background: #fff; border: 1px solid rgba(74,74,74,.15); border-radius: 4px; padding: 1.1rem; }
+.pc-card-title { font-size: .65rem; font-weight: 600; text-transform: uppercase; letter-spacing: .1em; margin-bottom: .65rem; padding-bottom: .5rem; border-bottom: 1px solid rgba(74,74,74,.1); }
+.pc-card-title.pros { color: #1a6640; }
+.pc-card-title.cons { color: #b03020; }
+.pc-list { list-style: none; display: flex; flex-direction: column; gap: .45rem; }
+.pc-list li { font-size: .82rem; color: #4a4a4a; line-height: 1.6; padding-left: 1rem; position: relative; font-weight: 300; }
+.pc-list li::before { position: absolute; left: 0; top: 0; font-weight: 700; }
+.pros .pc-list li::before { content: "✓"; color: #1a6640; }
+.cons .pc-list li::before { content: "✗"; color: #b03020; }
+.pc-list li em { font-style: normal; font-weight: 600; color: #1c1c1c; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <a class="back-link" href="index.html">Back to all calculators</a>
+
+  <div class="page-title-block">
+    <div class="page-eyebrow">Mortgage Planning Tool</div>
+    <div class="page-title">15 Year vs 30 Year</div>
+    <p class="page-subtitle">Compare both loan terms side by side — monthly payments, total interest paid, and accelerated payoff analysis.</p>
+  </div>
+  <hr class="page-divider">
+
+  <div class="container">
+    <div class="calc-inner">
+
+      <div class="compare-input-cols">
+
+        <div class="compare-input-col col-15">
+          <div class="compare-col-label">15 Year Loan</div>
+          <div class="field" style="margin-bottom:1.3rem">
+            <label>Home Purchase Price</label>
+            <div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="c15-price" placeholder="400,000" inputmode="numeric" class="comma-input has-prefix"></div>
+          </div>
+          <div class="field" style="margin-bottom:1.3rem">
+            <label>Loan Amount</label>
+            <div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="c15-loan" placeholder="350,000" inputmode="numeric" class="comma-input has-prefix"></div>
+          </div>
+          <div class="field" style="margin-bottom:1.3rem">
+            <label>Interest Rate (%)</label>
+            <div class="input-wrap"><span class="input-prefix">%</span><input type="number" id="c15-rate" placeholder="6.0" step="0.01" class="has-prefix"></div>
+          </div>
+        </div>
+
+        <div class="compare-input-col col-30">
+          <div class="compare-col-label">30 Year Loan</div>
+          <div class="field" style="margin-bottom:1.3rem">
+            <label>Home Purchase Price</label>
+            <div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="c30-price" placeholder="400,000" inputmode="numeric" class="comma-input has-prefix"></div>
+          </div>
+          <div class="field" style="margin-bottom:1.3rem">
+            <label>Loan Amount</label>
+            <div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="c30-loan" placeholder="350,000" inputmode="numeric" class="comma-input has-prefix"></div>
+          </div>
+          <div class="field" style="margin-bottom:1.3rem">
+            <label>Interest Rate (%)</label>
+            <div class="input-wrap"><span class="input-prefix">%</span><input type="number" id="c30-rate" placeholder="6.5" step="0.01" class="has-prefix"></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card">
+        <div class="card-title">Taxes &amp; Insurance</div>
+        <div class="form-grid">
+          <div class="field full">
+            <label>Include Taxes &amp; Insurance?</label>
+            <div class="input-wrap">
+              <select id="c-tai" onchange="toggleCompareTaiFields()">
+                <option value="no">No — use estimates</option>
+                <option value="yes">Yes — enter my own</option>
+              </select>
+            </div>
+          </div>
+          <div class="optional-fields" id="c-optional">
+            <div class="field">
+              <label>Annual Property Taxes</label>
+              <div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="c-tax" placeholder="4,800" inputmode="numeric" class="comma-input has-prefix"></div>
+            </div>
+            <div class="field">
+              <label>Annual Homeowners Insurance</label>
+              <div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="c-ins" placeholder="1,200" inputmode="numeric" class="comma-input has-prefix"></div>
+            </div>
+          </div>
+        </div>
+        <button class="calc-btn" onclick="calcCompare()">Compare</button>
+      </div>
+
+      <!-- RESULTS -->
+      <div id="c-results" class="results-panel">
+        <hr class="results-rule">
+        <div class="results-eyebrow">Your Results</div>
+        <div class="results-headline">Side-by-Side Comparison</div>
+
+        <button class="qualify-banner" onclick="window.open('affordability-calculator.html','_blank')">
+          <div><div class="qualify-banner-text">Find Out What You Qualify For</div></div>
+          <span class="qualify-banner-arrow">Click Here →</span>
+        </button>
+
+        <div class="compare-cols">
+          <div class="compare-col-card">
+            <div class="compare-col-header h-15">15 Year Loan</div>
+            <div class="compare-total-block">
+              <div class="compare-total-label">Approx. Monthly Payment</div>
+              <div class="compare-total-amount" id="c15-total">—</div>
+              <div class="compare-total-sub">/ month</div>
+              <div class="compare-apr" id="c15-apr">—</div>
+            </div>
+            <div class="compare-line-items" id="c15-lines"></div>
+          </div>
+          <div class="compare-col-card">
+            <div class="compare-col-header h-30">30 Year Loan</div>
+            <div class="compare-total-block">
+              <div class="compare-total-label">Approx. Monthly Payment</div>
+              <div class="compare-total-amount" id="c30-total">—</div>
+              <div class="compare-total-sub">/ month</div>
+              <div class="compare-apr" id="c30-apr">—</div>
+            </div>
+            <div class="compare-line-items" id="c30-lines"></div>
+          </div>
+        </div>
+
+        <div class="pmi-disclaimer" id="c-pmi-disclaimer">
+          <p><strong>Monthly mortgage insurance required (less than 20% down).</strong> Estimate only. Contact a lending professional for accurate quote.</p>
+        </div>
+
+        <div class="diff-callout" id="c-diff-block"><p id="c-diff-text"></p></div>
+
+        <div class="accel-payoff-card" id="c-accel-card" style="display:none">
+          <div class="accel-payoff-title">💡 What if you applied that difference toward principal?</div>
+          <div class="accel-payoff-body" id="c-accel-body"></div>
+        </div>
+
+        <div class="pros-cons-grid" id="c-pros-cons">
+          <div class="pc-col">
+            <div class="pc-card">
+              <div class="pc-card-title pros">15 Year — Pros</div>
+              <ul class="pc-list pros">
+                <li>Pay significantly less interest over the life of the loan</li>
+                <li>Every extra dollar above interest goes directly to principal</li>
+                <li>Own your home free and clear in 15 years</li>
+              </ul>
+            </div>
+            <div class="pc-card">
+              <div class="pc-card-title cons">15 Year — Cons</div>
+              <ul class="pc-list cons">
+                <li>Higher monthly payment — not ideal if budget is tight</li>
+                <li>Fixed obligation with no option to pay less</li>
+              </ul>
+            </div>
+          </div>
+          <div class="pc-col">
+            <div class="pc-card">
+              <div class="pc-card-title pros">30 Year — Pros</div>
+              <ul class="pc-list pros">
+                <li>Lower required monthly payment gives more breathing room</li>
+                <li id="c-30-extra-pro">Option to pay extra toward principal — <em id="c-payoff-note">see accelerated payoff above</em></li>
+              </ul>
+            </div>
+            <div class="pc-card">
+              <div class="pc-card-title cons">30 Year — Cons</div>
+              <ul class="pc-list cons">
+                <li>More of each payment goes toward interest, especially early on</li>
+                <li>30 years before the loan is paid off on standard schedule</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /calc-inner -->
+    <div class="container-footer">
+      <button class="reset-btn" onclick="resetCompare()">↺ Reset</button>
+    </div>
+  </div><!-- /container -->
+
+  <div class="disclaimer">
+    <p>© Mortgage Calculators by Gavin Hamilton &nbsp;|&nbsp; NMLS #857506</p>
+    <p>For educational and informational purposes only. Not a commitment to lend.</p>
+    <p>*APR estimate includes origination fees of $1,525, settlement fees, a 1% discount point, and 15 days prepaid interest (Portland, Oregon).</p>
+  </div>
+
+</div><!-- /app -->
+
+<div class="alert-overlay" id="alert-modal">
+  <div class="alert-box">
+    <div class="alert-icon" id="alert-icon">Input Required</div>
+    <div class="alert-msg" id="alert-msg"></div>
+    <button class="alert-btn" onclick="closeAlert()">OK</button>
+  </div>
+</div>
+<div class="contact-overlay" id="contact-modal">
+  <div class="contact-modal">
+    <div class="contact-modal-title">I'm here when you're ready</div>
+    <div class="contact-modal-body">
+      <span class="contact-detail"><a href="mailto:ghamilton@mtgxps.com">ghamilton@mtgxps.com</a></span><br>
+      <span class="contact-detail"><a href="tel:5035178983">503.517.8983</a></span>
+    </div>
+    <button class="contact-close-btn" onclick="closeContactModal()">Back to Calculator</button>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+function toggleCompareTaiFields() {
+  document.getElementById('c-optional').classList.toggle('visible', document.getElementById('c-tai').value==='yes');
+}
+
+function calcScenario(loanId, rateId, priceId, term, tai, customTax, customIns) {
+  var loan=parseVal(loanId);
+  var rate=parseFloat(document.getElementById(rateId).value)/100;
+  var price=parseVal(priceId)||loan;
+  if (!loan||loan<=0||!rate) return null;
+  if (price>0&&loan/price>1.0) { showAlert('Loan amount exceeds purchase price. Please input a down payment.',true); return null; }
+  if (price>0&&loan/price>0.95) showAlert('You have less than 5% down payment. Contact a lending professional.',false);
+  var r=rate/12, n=term*12;
+  var pi=loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+  var monthlyTax, monthlyIns;
+  if (tai==='yes') { monthlyTax=customTax/12; monthlyIns=customIns/12; }
+  else { monthlyTax=(price*0.012)/12; monthlyIns=(loan*0.0025)/12; }
+  var ltv=loan/price, needsPMI=ltv>0.80;
+  var pmi=needsPMI?(loan*0.006)/12:0;
+  var total=pi+monthlyTax+monthlyIns+pmi;
+  return { pi, monthlyTax, monthlyIns, pmi, needsPMI, total, apr: calcAPR(loan,rate,term,price,pmi) };
+}
+
+function buildCompareLines(containerId, r) {
+  var html=`
+    <div class="compare-line-item"><div class="compare-line-label">Principal &amp; Interest</div><div class="compare-line-value">${fmt2(r.pi)}</div></div>
+    <div class="compare-line-item"><div class="compare-line-label">Monthly Property Tax</div><div class="compare-line-value">${fmt2(r.monthlyTax)}</div></div>
+    <div class="compare-line-item"><div class="compare-line-label">Monthly Homeowners Insurance</div><div class="compare-line-value">${fmt2(r.monthlyIns)}</div></div>`;
+  if (r.needsPMI) html+=`<div class="compare-line-item pmi-item"><div class="compare-line-label">Monthly Mortgage Insurance (PMI)</div><div class="compare-line-value">${fmt2(r.pmi)}</div></div>`;
+  document.getElementById(containerId).innerHTML=html;
+}
+
+function calcCompare() {
+  var tai=document.getElementById('c-tai').value;
+  var customTax=parseVal('c-tax'), customIns=parseVal('c-ins');
+  var term15 = 15;
+  var term30 = 30;
+  var r15=calcScenario('c15-loan','c15-rate','c15-price',term15,tai,customTax,customIns);
+  var r30=calcScenario('c30-loan','c30-rate','c30-price',term30,tai,customTax,customIns);
+  if (!r15&&!r30) return;
+
+  if (r15) { document.getElementById('c15-total').textContent=fmt2(r15.total); document.getElementById('c15-apr').textContent=fmtAPR(r15.apr); buildCompareLines('c15-lines',r15); }
+  if (r30) { document.getElementById('c30-total').textContent=fmt2(r30.total); document.getElementById('c30-apr').textContent=fmtAPR(r30.apr); buildCompareLines('c30-lines',r30); }
+
+  document.getElementById('c-pmi-disclaimer').classList.toggle('show',(r15&&r15.needsPMI)||(r30&&r30.needsPMI));
+
+  if (r15&&r30) {
+    var diff=r15.total-r30.total;
+    var dt=document.getElementById('c-diff-text');
+    if (diff>0) dt.innerHTML=`A 15-year mortgage will cost <span class="diff-amount">${fmt2(diff)} more per month</span> than a 30-year mortgage.`;
+    else if (diff<0) dt.innerHTML=`A 30-year mortgage will cost <span class="diff-amount">${fmt2(Math.abs(diff))} more per month</span> than a 15-year mortgage.`;
+    else dt.innerHTML=`Both loans have the same approximate monthly payment.`;
+    document.getElementById('c-diff-block').classList.add('show');
+
+    var accelCard=document.getElementById('c-accel-card');
+    if (diff>0) {
+      var loan30=parseVal('c30-loan'), rate30=parseFloat(document.getElementById('c30-rate').value)/100;
+      var maxMonths=30*12;
+      if (loan30>0&&rate30>0) {
+        var rr=rate30/12, extraPmt=r30.pi+(r15.pi-r30.pi);
+        var balance2=loan30, months2=0;
+        while (balance2>0.005&&months2<maxMonths) { months2++; var ic2=balance2*rr; var pp2=extraPmt-ic2; if(pp2>balance2)pp2=balance2; balance2-=pp2; if(balance2<0.005)balance2=0; }
+        var approxYearsSaved=Math.round((maxMonths-months2)/12);
+        var yrs2=Math.floor(months2/12), mos2=months2%12;
+        var timeStr2=yrs2>0?(yrs2+' years'+(mos2>0?' and '+mos2+' months':'')):(mos2+' months');
+        var intSaved=(r30.pi*maxMonths)-(extraPmt*months2);
+        document.getElementById('c-accel-body').innerHTML='The 15-year mortgage costs <span class="highlight-num">'+fmt2(diff)+'/mo more</span> than the 30-year.<br><br><strong>Key insight:</strong> if you took the 30-year loan and applied that extra <span class="highlight-num">'+fmt2(diff)+'/mo</span> toward principal every month, it would be paid off in just <span class="highlight-num">'+timeStr2+'</span> — approximately <span class="highlight-green">'+approxYearsSaved+' years earlier</span>, saving an estimated <span class="highlight-green">'+fmt(intSaved)+'</span> in total interest. And you\'d retain the flexibility to pay only the lower required amount whenever needed.';
+        accelCard.style.display='block';
+      }
+    } else { accelCard.style.display='none'; }
+    document.getElementById('c-pros-cons').classList.add('show');
+  }
+
+  var el=document.getElementById('c-results');
+  el.classList.add('show');
+  setTimeout(()=>el.scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function resetCompare() {
+  document.querySelectorAll('input').forEach(i=>i.value='');
+  document.getElementById('c-results').classList.remove('show');
+  document.getElementById('c-pmi-disclaimer').classList.remove('show');
+  document.getElementById('c-diff-block').classList.remove('show');
+  document.getElementById('c-pros-cons').classList.remove('show');
+  document.getElementById('c-accel-card').style.display='none';
+  document.getElementById('c15-total').textContent='—';
+  document.getElementById('c30-total').textContent='—';
+  document.getElementById('c15-lines').innerHTML='';
+  document.getElementById('c30-lines').innerHTML='';
+}
+</script>
+</body>
+</html>
