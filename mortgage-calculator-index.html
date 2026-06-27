@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mortgage Calculators — Gavin Hamilton</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@600;700&family=Lato:wght@400;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --blue:       #5bc8f5;
+      --blue-deep:  #2a7fd4;
+      --pink:       #f55a8f;
+      --pink-deep:  #d4246e;
+      --purple:     #c060d8;
+      --gold:       #e8960a;
+      --gold-deep:  #b86e00;
+      --gold-glow:  rgba(232,150,10,0.45);
+      --navy:       #0b1e35;
+      --navy-mid:   #112844;
+      --white:      #ffffff;
+      --off-white:  #f7f8fc;
+      --text-dark:  #1a1a2e;
+      --blue-glow:  rgba(91,200,245,0.55);
+      --pink-glow:  rgba(245,90,143,0.55);
+      --purp-glow:  rgba(192,96,216,0.50);
+      --transition: 0.22s cubic-bezier(0.4,0,0.2,1);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html, body { height: 100%; }
+
+    body {
+      font-family: 'Lato', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      background: #e8edf2;
+      overflow-x: hidden;
+    }
+
+    /* BACKGROUND — cool light gray with subtle grid */
+    .bg-layer {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: url('background.png') center center / cover no-repeat, #e8edf2;
+    }
+    .bg-layer::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: rgba(232,237,242,0.88);
+    }
+    /* faint grid */
+    .bg-layer::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+      background-image:
+        linear-gradient(rgba(91,200,245,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(91,200,245,0.07) 1px, transparent 1px);
+      background-size: 52px 52px;
+      animation: gridDrift 28s linear infinite;
+    }
+    @keyframes gridDrift {
+      from { background-position: 0 0; }
+      to   { background-position: 52px 52px; }
+    }
+
+    /* SITE WRAPPER */
+    .site-wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+
+    /* HEADER IMAGE */
+    .site-header {
+      width: 100%;
+      background: #ffffff;
+      text-align: center;
+      padding: 16px 0 8px;
+    }
+    .site-header img {
+      width: auto;
+      max-width: 65%;
+      height: auto;
+      max-height: 220px;
+      object-fit: contain;
+      display: block;
+      margin: 0 auto;
+    }
+
+    /* MAIN BUTTON AREA */
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 48px 24px;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      width: 100%;
+      max-width: 960px;
+    }
+
+    /* GAMIFIED BUTTON BASE */
+    .game-btn {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-decoration: none;
+      padding: 32px 20px 28px;
+      border-radius: 10px;
+      border: 2px solid var(--btn-border);
+      background: #ffffff;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      overflow: visible;
+      cursor: pointer;
+      box-shadow: 0 2px 18px var(--btn-glow);
+      transition:
+        transform var(--transition),
+        box-shadow var(--transition),
+        border-color var(--transition),
+        background var(--transition);
+      opacity: 0;
+      animation: popIn 0.5s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+
+    .game-btn:nth-child(1) { animation-delay: 0.05s; }
+    .game-btn:nth-child(2) { animation-delay: 0.15s; }
+    .game-btn:nth-child(3) { animation-delay: 0.25s; }
+    .game-btn:nth-child(4) { animation-delay: 0.35s; }
+    .game-btn:nth-child(5) { animation-delay: 0.45s; }
+
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0.88) translateY(14px); }
+      to   { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    /* corner notch top-left */
+    .game-btn::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0;
+      width: 0; height: 0;
+      border-style: solid;
+      border-width: 22px 22px 0 0;
+      border-color: var(--btn-accent) transparent transparent transparent;
+      transition: border-width var(--transition);
+    }
+
+    /* bottom sweep bar */
+    .game-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--btn-accent), var(--btn-accent2, var(--btn-accent)));
+      transform: scaleX(0.25);
+      transform-origin: left;
+      transition: transform var(--transition), box-shadow var(--transition);
+    }
+
+    .game-btn:hover {
+      transform: translateY(-5px) scale(1.025);
+      border-color: var(--btn-accent);
+      background: var(--btn-bg-hover);
+      box-shadow:
+        0 0 0 1px var(--btn-accent),
+        0 10px 36px var(--btn-glow);
+    }
+    .game-btn:hover::after {
+      transform: scaleX(1);
+      box-shadow: 0 0 10px var(--btn-glow);
+    }
+    .game-btn:hover::before { border-width: 28px 28px 0 0; }
+    .game-btn:active { transform: translateY(-2px) scale(1.01); }
+
+    /* ICON */
+    .btn-icon {
+      font-size: 2rem;
+      line-height: 1;
+      background: linear-gradient(135deg, var(--btn-accent), var(--btn-accent2, var(--btn-accent)));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      filter: drop-shadow(0 0 5px var(--btn-glow));
+      transition: transform var(--transition), filter var(--transition);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn-icon svg {
+      width: 2rem;
+      height: 2rem;
+      color: var(--btn-accent);
+      -webkit-text-fill-color: initial;
+      filter: none;
+    }
+    .game-btn:hover .btn-icon {
+      transform: scale(1.18);
+      filter: drop-shadow(0 0 10px var(--btn-glow));
+    }
+
+    /* LABEL */
+    .btn-label {
+      font-family: 'Rajdhani', sans-serif;
+      font-weight: 700;
+      font-size: 1.05rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dark);
+      text-align: center;
+      line-height: 1.25;
+      transition: color var(--transition);
+    }
+    .game-btn:hover .btn-label {
+      background: linear-gradient(135deg, var(--btn-accent), var(--btn-accent2, var(--btn-accent)));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* ARROW */
+    .btn-arrow {
+      font-size: 0.72rem;
+      letter-spacing: 0.18em;
+      background: linear-gradient(90deg, var(--btn-accent), var(--btn-accent2, var(--btn-accent)));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      opacity: 0;
+      transform: translateX(-6px);
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .game-btn:hover .btn-arrow { opacity: 1; transform: translateX(0); }
+
+    /* ── COLOR THEMES ── */
+    /* ── MORTGAGE BUTTONS (blue) ── */
+    .btn-calc {
+      --btn-accent:    var(--blue);
+      --btn-accent2:   var(--blue-deep);
+      --btn-border:    rgba(91,200,245,0.55);
+      --btn-glow:      var(--blue-glow);
+      --btn-bg-hover:  rgba(91,200,245,0.10);
+      background: #ffffff;
+      box-shadow: 0 4px 18px rgba(91,200,245,0.12), 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .btn-rates {
+      --btn-accent:    var(--blue);
+      --btn-accent2:   var(--blue-deep);
+      --btn-border:    rgba(91,200,245,0.55);
+      --btn-glow:      var(--blue-glow);
+      --btn-bg-hover:  rgba(91,200,245,0.10);
+      background: #ffffff;
+      box-shadow: 0 4px 18px rgba(91,200,245,0.12), 0 2px 6px rgba(0,0,0,0.05);
+    }
+    .btn-contact {
+      --btn-accent:    var(--blue);
+      --btn-accent2:   var(--blue-deep);
+      --btn-border:    rgba(91,200,245,0.55);
+      --btn-glow:      var(--blue-glow);
+      --btn-bg-hover:  rgba(91,200,245,0.10);
+      background: #ffffff;
+      box-shadow: 0 4px 18px rgba(91,200,245,0.12), 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    /* ── EDUCATION BUTTONS (teal) ── */
+    .btn-news {
+      --btn-accent:    #0eb89a;
+      --btn-accent2:   #097a67;
+      --btn-border:    rgba(14,184,154,0.55);
+      --btn-glow:      rgba(14,184,154,0.45);
+      --btn-bg-hover:  rgba(14,184,154,0.10);
+      background: #ffffff;
+      box-shadow: 0 4px 18px rgba(14,184,154,0.12), 0 2px 6px rgba(0,0,0,0.05);
+    }
+
+    /* TOOLTIP */
+    .game-btn .tooltip {
+      position: absolute;
+      bottom: calc(100% + 12px);
+      left: 50%;
+      transform: translateX(-50%) translateY(6px);
+      background: linear-gradient(135deg, #1a1a2e, #2a2a4e);
+      color: #fff;
+      font-family: 'Lato', sans-serif;
+      font-size: 0.78rem;
+      font-weight: 400;
+      letter-spacing: 0.03em;
+      line-height: 1.45;
+      text-transform: none;
+      white-space: normal;
+      width: 240px;
+      text-align: center;
+      padding: 9px 14px;
+      border-radius: 8px;
+      border: 1px solid rgba(91,200,245,0.40);
+      box-shadow: 0 4px 20px rgba(91,200,245,0.25);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s ease, transform 0.2s ease;
+      z-index: 10;
+    }
+    .game-btn .tooltip::after {
+      content: '';
+      position: absolute;
+      top: 100%; left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-top-color: rgba(91,200,245,0.40);
+    }
+    .game-btn:hover .tooltip,
+    .rates-redirecting .tooltip {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    .btn-apply {
+      --btn-accent:    #0eb89a;
+      --btn-accent2:   #097a67;
+      --btn-border:    rgba(14,184,154,0.55);
+      --btn-glow:      rgba(14,184,154,0.45);
+      --btn-bg-hover:  rgba(14,184,154,0.10);
+      flex-direction: column;
+      gap: 10px;
+      padding: 24px 20px;
+      background: #ffffff;
+      border-width: 2px;
+      box-shadow: 0 4px 18px rgba(14,184,154,0.12), 0 2px 6px rgba(0,0,0,0.05);
+      transform: none;
+    }
+    .btn-refi {
+      --btn-accent:    #0eb89a;
+      --btn-accent2:   #097a67;
+      --btn-border:    rgba(14,184,154,0.55);
+      --btn-glow:      rgba(14,184,154,0.45);
+      --btn-bg-hover:  rgba(14,184,154,0.10);
+      flex-direction: column;
+      gap: 10px;
+      padding: 24px 20px;
+      background: #ffffff;
+      border-width: 2px;
+      box-shadow: 0 4px 18px rgba(14,184,154,0.12), 0 2px 6px rgba(0,0,0,0.05);
+      transform: none;
+    }
+    .btn-apply .btn-label,
+    .btn-refi .btn-label { font-size: 1rem; }
+    .btn-apply .btn-icon,
+    .btn-refi .btn-icon  { font-size: 1.8rem; }
+
+    /* top row wrapper for the two apply buttons */
+    .btn-top-row {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+    }
+
+    /* FOOTER IMAGE */
+    .site-footer { width: 100%; background: #dde3ea; }
+    .site-footer img {
+      width: 100%;
+      max-height: 160px;
+      object-fit: cover;
+      display: block;
+    }
+    .footer-legal {
+      background: #dde3ea;
+      color: rgba(26,26,46,0.45);
+      font-size: 0.72rem;
+      text-align: center;
+      padding: 12px 24px 4px;
+      letter-spacing: 0.04em;
+      border-top: 1px solid rgba(91,200,245,0.25);
+    }
+    .footer-disclaimer {
+      background: #dde3ea;
+      padding: 6px 24px 16px;
+      text-align: center;
+    }
+    .footer-disclaimer-text {
+      font-size: 0.72rem;
+      color: rgba(26,26,46,0.45);
+      letter-spacing: 0.04em;
+      line-height: 1.6;
+    }
+    .footer-disclaimer-text a {
+      color: inherit;
+      text-decoration: underline;
+    }
+
+    /* Responsive */
+    @media (max-width: 700px) {
+      .btn-grid { grid-template-columns: repeat(2, 1fr); }
+      .game-btn { padding: 26px 18px 22px; }
+      .btn-label { font-size: 0.95rem; }
+    }
+    @media (max-width: 480px) {
+      .btn-grid { grid-template-columns: 1fr; }
+    }
+    /* ── ABOUT MODAL ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      z-index: 500;
+      background: rgba(11,30,53,0.72);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      animation: none;
+    }
+    .modal-overlay.open {
+      display: flex;
+      animation: fadeOverlay 0.25s ease forwards;
+    }
+    @keyframes fadeOverlay {
+      from { opacity: 0; }
+      to   { opacity: 1; }
+    }
+
+    .modal-box {
+      background: #fff;
+      border-radius: 14px;
+      border: 2px solid rgba(192,96,216,0.35);
+      box-shadow: 0 12px 56px rgba(192,96,216,0.25), 0 2px 12px rgba(0,0,0,0.12);
+      max-width: 520px;
+      width: 100%;
+      padding: 36px 36px 30px;
+      position: relative;
+      animation: popIn 0.35s cubic-bezier(0.34,1.56,0.64,1) forwards;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 14px; right: 18px;
+      background: none;
+      border: none;
+      font-size: 1.4rem;
+      color: #aaa;
+      cursor: pointer;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+    .modal-close:hover { color: var(--pink); }
+
+    .modal-box h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.35rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, var(--purple), var(--blue-deep));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 18px;
+    }
+
+    .modal-box p {
+      font-size: 0.92rem;
+      color: #3a3a5a;
+      line-height: 1.72;
+      margin-bottom: 14px;
+    }
+    .modal-box p:last-of-type { margin-bottom: 0; }
+
+    .modal-divider {
+      border: none;
+      border-top: 1px solid rgba(192,96,216,0.18);
+      margin: 18px 0;
+    }
+
+    .modal-contact {
+      font-size: 0.88rem;
+      color: #3a3a5a;
+      line-height: 1.85;
+    }
+    .modal-contact strong {
+      display: block;
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-dark);
+      margin-bottom: 2px;
+    }
+    .modal-contact a {
+      color: var(--blue-deep);
+      text-decoration: none;
+    }
+    .modal-contact a:hover { text-decoration: underline; }
+
+    @media (max-width: 520px) {
+      .modal-box { padding: 28px 22px 24px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <div class="bg-layer" aria-hidden="true"></div>
+
+  <div class="site-wrapper">
+
+    <!-- Upload header.png to your repo root -->
+    <header class="site-header">
+      <img src="header.png" alt="Header" onerror="this.style.display='none'" />
+    </header>
+
+    <main>
+      <div class="btn-grid" role="navigation" aria-label="Calculator navigation">
+
+        <a href="mortgage-calculator.html" class="game-btn btn-calc">
+          <span class="btn-icon">⊞</span>
+          <span class="btn-label">Mortgage<br>Calculator</span>
+          <span class="btn-arrow">▶ ▶ ▶</span>
+        </a>
+
+        <a href="15-vs-30.html" class="game-btn btn-rates">
+          <span class="btn-icon">⇄</span>
+          <span class="btn-label">15 Year<br>vs 30 Year</span>
+          <span class="btn-arrow">▶ ▶ ▶</span>
+        </a>
+
+        <a href="buy-vs-rent.html" class="game-btn btn-contact">
+          <span class="btn-icon">
+            <svg width="36" height="36" viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- roof -->
+              <polyline points="4,18 18,5 32,18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <!-- walls -->
+              <rect x="8" y="18" width="20" height="13" rx="1" stroke="currentColor" stroke-width="2.2" fill="none"/>
+              <!-- door -->
+              <rect x="14" y="24" width="8" height="7" rx="1" fill="currentColor" opacity="0.35"/>
+            </svg>
+          </span>
+          <span class="btn-label">Buy<br>vs Rent</span>
+          <span class="btn-arrow">▶ ▶ ▶</span>
+        </a>
+
+        <a href="how-interest-works.html" class="game-btn btn-news">
+          <span class="btn-icon">%</span>
+          <span class="btn-label">How Interest<br>Works</span>
+          <span class="btn-arrow">▶ ▶ ▶</span>
+        </a>
+
+        <a href="how-amortization-works.html" class="game-btn btn-apply">
+          <span class="btn-icon">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- descending bars: interest shrinking left to right -->
+              <rect x="2"  y="6"  width="5" height="22" rx="1.5" fill="currentColor" opacity="1"/>
+              <rect x="10" y="11" width="5" height="17" rx="1.5" fill="currentColor" opacity="0.8"/>
+              <rect x="18" y="17" width="5" height="11" rx="1.5" fill="currentColor" opacity="0.55"/>
+              <rect x="26" y="23" width="5" height="5"  rx="1.5" fill="currentColor" opacity="0.3"/>
+              <!-- baseline -->
+              <line x1="1" y1="29.5" x2="33" y2="29.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+            </svg>
+          </span>
+          <span class="btn-label">How Loan Amortization<br>Works</span>
+          <span class="btn-arrow">▶ ▶ ▶</span>
+        </a>
+
+        <a href="compound-interest.html" class="game-btn btn-refi">
+          <span class="btn-icon">
+            <svg width="34" height="34" viewBox="0 0 34 34" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <!-- smooth exponential curve -->
+              <path d="M3 30 C8 29 13 26 18 21 C23 16 27 9 31 4" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" fill="none"/>
+              <!-- baseline -->
+              <line x1="2" y1="30.5" x2="33" y2="30.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.35"/>
+            </svg>
+          </span>
+          <span class="btn-label">How Compound Interest<br>Works</span>
+          <span class="btn-arrow">▶ ▶ ▶</span>
+        </a>
+
+      </div>
+    </main>
+
+    <!-- Upload footer.png to your repo root -->
+    <footer class="site-footer">
+      <img src="footer.png" alt="Footer" onerror="this.style.display='none'" />
+      <p class="footer-legal">
+        &copy; <script>document.write(new Date().getFullYear())</script>
+        &nbsp;|&nbsp; Equal Housing Lender &nbsp;|&nbsp; NMLS #857506 &nbsp;|&nbsp;
+        Licensed in OR, WA, CA, ID, AZ &nbsp;|&nbsp; All rights reserved.
+      </p>
+      <div class="footer-disclaimer">
+        <p class="footer-disclaimer-text">
+          Mortgage Express, LLC &nbsp;|&nbsp; NMLS 40831 &nbsp;|&nbsp; 15115 SW Sequoia Parkway, Ste 100, Portland, OR 97224 &nbsp;|&nbsp; Licensed by the California Department of Financial Protection and Innovation under the Residential Mortgage Lending Act &nbsp;|&nbsp; AZBK-1027601 &nbsp;|&nbsp; Licensed in OR, ID, WA, UT, CA, CO &amp; AZ &nbsp;|&nbsp; Not all Loan Officers are licensed in all states &nbsp;|&nbsp; This is not a commitment to lend &nbsp;|&nbsp; Program terms, rates, and conditions are subject to change without notice &nbsp;|&nbsp; All loans are subject to credit and property approval &nbsp;|&nbsp; Loan products and availability may vary by state. Some loan products may be offered through approved lending partners. &nbsp;|&nbsp; Mortgage Express, LLC is an Equal Housing Opportunity. Check licensing at <a href="https://www.nmlsconsumeraccess.org" target="_blank">nmlsconsumeraccess.org</a>
+        </p>
+      </div>
+    </footer>
+
+  </div>
+
+</body>
+</html>
