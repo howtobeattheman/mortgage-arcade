@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Buy vs Rent — Gavin Hamilton</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<link rel="stylesheet" href="shared.css">
+<style>
+.bvr-input-cols { display:grid; grid-template-columns:1fr 1fr; gap:1.25rem; margin-bottom:1.5rem; }
+@media(max-width:560px){ .bvr-input-cols{grid-template-columns:1fr} }
+
+.bvr-input-col { border:1px solid rgba(74,74,74,.15); border-radius:4px; padding:1.5rem; background:#faf9f7; }
+.bvr-input-col.col-rent { border-color:rgba(26,64,102,.2); background:rgba(26,64,102,.02); }
+.bvr-input-col.col-buy  { border-color:rgba(184,146,74,.3); background:rgba(184,146,74,.03); }
+
+.bvr-col-label {
+  font-size:.68rem; letter-spacing:.18em; text-transform:uppercase; font-weight:600;
+  margin-bottom:1.25rem; padding-bottom:.75rem; border-bottom:1px solid rgba(74,74,74,.1);
+  display:flex; align-items:center; gap:.4rem;
+}
+.bvr-col-label::before { content:''; width:5px; height:5px; border-radius:50%; display:inline-block; opacity:.6; }
+.col-rent .bvr-col-label { color:#1a4066; }
+.col-rent .bvr-col-label::before { background:#1a4066; }
+.col-buy .bvr-col-label  { color:#b8924a; }
+.col-buy .bvr-col-label::before { background:#b8924a; }
+
+.bvr-input-col .field { margin-bottom:1.3rem; }
+.bvr-input-col .field:last-child { margin-bottom:0; }
+
+.bvr-opt-fields { display:none; }
+.bvr-opt-fields.visible { display:block; }
+.bvr-opt-fields .field { margin-top:1.3rem; }
+
+.dp-question { display:none; margin-top:.6rem; padding:.85rem 1rem; background:rgba(184,146,74,.06); border:1px solid rgba(184,146,74,.3); border-radius:4px; }
+.dp-question.visible { display:block; }
+.dp-question p { font-size:.68rem; font-weight:600; text-transform:uppercase; letter-spacing:.1em; color:#b8924a; margin-bottom:.6rem; }
+.dp-btns { display:flex; gap:.6rem; }
+.dp-btn { flex:1; padding:.55rem .5rem; background:#fff; border:1px solid rgba(74,74,74,.2); border-radius:4px; font-family:'DM Sans',sans-serif; font-size:.75rem; font-weight:500; cursor:pointer; color:#4a4a4a; text-align:center; transition:all .2s; }
+.dp-btn:hover { border-color:#b8924a; color:#b8924a; }
+.dp-btn.selected { background:#b8924a; color:#fff; border-color:#b8924a; }
+
+.bvr-results { display:none; }
+.bvr-results.show { display:block; }
+
+/* Summary at-a-glance card */
+.bvr-summary-card { background:#faf9f7; border:1px solid rgba(184,146,74,.3); border-radius:4px; padding:1.5rem 1.75rem 1.25rem; margin-bottom:1.5rem; }
+.bvr-summary-title { font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.15em; color:#888; margin-bottom:1.25rem; }
+.bvr-summary-row { display:flex; align-items:center; gap:.75rem; padding:3px 0; }
+.bvr-summary-col { flex:1; }
+.bvr-summary-vs { font-size:.65rem; font-weight:600; color:#aaa; text-transform:uppercase; letter-spacing:.05em; flex-shrink:0; width:22px; text-align:center; }
+.bvr-summary-label { font-size:.68rem; color:#888; margin-bottom:.2rem; font-weight:300; }
+.bvr-summary-period { font-size:.62rem; color:#aaa; }
+.bvr-summary-amount { font-family:'DM Mono',monospace; font-size:clamp(1rem,3vw,1.5rem); font-weight:700; color:#1c1c1c; letter-spacing:-.02em; }
+.bvr-summary-divider { height:1px; background:rgba(184,146,74,.25); margin:1rem 0; }
+.bvr-summary-note { font-size:.68rem; color:#aaa; margin-top:1rem; text-align:center; font-weight:300; }
+
+/* Side by side current cards */
+.bvr-current-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin-bottom:1rem; }
+@media(max-width:560px){ .bvr-current-grid{grid-template-columns:1fr} }
+
+.bvr-result-card { background:#fff; border:1px solid rgba(74,74,74,.15); border-radius:4px; overflow:hidden; }
+.bvr-result-header { padding:.6rem 1.1rem; border-bottom:1px solid rgba(74,74,74,.1); font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.12em; background:#faf9f7; display:flex; align-items:center; gap:.4rem; }
+.bvr-result-header::before { content:''; width:5px; height:5px; border-radius:50%; display:inline-block; opacity:.7; }
+.bvr-result-header.h-rent { color:#1a4066; }
+.bvr-result-header.h-rent::before { background:#1a4066; }
+.bvr-result-header.h-buy  { color:#b8924a; }
+.bvr-result-header.h-buy::before  { background:#b8924a; }
+
+.bvr-metric { padding:1rem 1.1rem; border-bottom:1px solid rgba(74,74,74,.07); }
+.bvr-metric:last-child { border-bottom:none; }
+.bvr-metric-label { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:#aaa; margin-bottom:.3rem; font-weight:500; }
+.bvr-metric-value { font-family:'DM Mono',monospace; font-size:clamp(1.3rem,4vw,2rem); font-weight:700; color:#1c1c1c; line-height:1; letter-spacing:-.02em; }
+.bvr-metric-sub { font-size:.72rem; color:#aaa; margin-top:.2rem; font-weight:300; }
+.bvr-apr-line { font-family:'DM Mono',monospace; font-size:.82rem; font-weight:500; color:#4a4a4a; margin-top:.3rem; }
+
+.bvr-sub-lines { margin-top:.75rem; display:flex; flex-direction:column; }
+.bvr-sub-line { display:flex; justify-content:space-between; align-items:center; padding:.45rem 0; border-bottom:1px solid rgba(74,74,74,.07); gap:.5rem; }
+.bvr-sub-line:last-child { border-bottom:none; }
+.bvr-sub-label { font-size:.75rem; color:#888; font-weight:300; }
+.bvr-sub-value { font-family:'DM Mono',monospace; font-size:.82rem; font-weight:600; color:#1c1c1c; white-space:nowrap; }
+.bvr-sub-value.dash { color:#ccc; }
+.bvr-sub-value.green { color:#1a6640; }
+.bvr-sub-line.dp-note .bvr-sub-label,
+.bvr-sub-line.dp-note .bvr-sub-value { color:#7a6020; }
+
+.bvr-years-divider { text-align:center; padding:1rem; font-size:.65rem; font-weight:600; text-transform:uppercase; letter-spacing:.15em; color:#b8924a; border-top:1px dashed rgba(184,146,74,.35); border-bottom:1px dashed rgba(184,146,74,.35); margin:1.25rem 0; background:rgba(184,146,74,.03); }
+
+.bvr-rent-exceeds { padding:.75rem 1.1rem; background:rgba(26,102,64,.07); border:1px solid rgba(26,102,64,.2); border-radius:4px; margin-bottom:.75rem; font-size:.82rem; color:#1a6640; font-weight:300; }
+.bvr-rent-exceeds em { font-style:normal; font-weight:600; }
+
+.verdict-card { display:none; padding:1.25rem 1.5rem; background:rgba(184,146,74,.06); border:1px solid rgba(184,146,74,.35); border-radius:4px; margin-top:1rem; }
+.verdict-card.show { display:block; }
+.verdict-text { font-size:.92rem; color:#1c1c1c; line-height:1.75; font-weight:300; }
+.verdict-text .v-amount { font-family:'DM Mono',monospace; font-weight:600; color:#1c1c1c; }
+
+.bvr-chart-wrap { position:relative; width:100%; height:220px; margin-bottom:.5rem; background:#faf9f7; border:1px solid rgba(74,74,74,.15); border-radius:4px; padding:.75rem; }
+.bvr-chart-wrap canvas { width:100%!important; height:100%!important; }
+.chart-legend { display:flex; gap:1.25rem; margin-top:.6rem; font-size:.72rem; color:#4a4a4a; flex-wrap:wrap; font-weight:300; }
+.legend-dot { display:inline-block; width:10px; height:10px; border-radius:2px; margin-right:4px; vertical-align:middle; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <a class="back-link" href="index.html">Back to all calculators</a>
+
+  <div class="page-title-block">
+    <div class="page-eyebrow">Mortgage Planning Tool</div>
+    <div class="page-title">Buy vs Rent</div>
+    <p class="page-subtitle">Compare home equity to investing the difference — with net worth projections over your chosen timeframe.</p>
+  </div>
+  <hr class="page-divider">
+
+  <div class="container">
+    <div class="calc-inner">
+
+      <div class="bvr-input-cols">
+
+        <!-- RENT -->
+        <div class="bvr-input-col col-rent">
+          <div class="bvr-col-label">Rent</div>
+          <div class="field"><label>Estimated Monthly Rent</label><div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="bvr-rent" placeholder="2,000" inputmode="numeric" class="comma-input has-prefix"></div></div>
+          <div class="field"><label>Annual Rent Increases (%)</label><div class="input-wrap"><span class="input-prefix">%</span><input type="number" id="bvr-rent-inc" placeholder="3" step="0.1" class="has-prefix"></div></div>
+          <div class="field"><label>Amount Invested / Month</label><div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="bvr-invest" placeholder="500" inputmode="numeric" class="comma-input has-prefix"></div></div>
+          <div class="field"><label>Est. Investment Return (%)</label><div class="input-wrap"><span class="input-prefix">%</span><input type="number" id="bvr-inv-rate" placeholder="7" step="0.1" class="has-prefix"></div></div>
+        </div>
+
+        <!-- BUY -->
+        <div class="bvr-input-col col-buy">
+          <div class="bvr-col-label">Buy</div>
+          <div class="field"><label>Purchase Price</label><div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="bvr-price" placeholder="400,000" inputmode="numeric" class="comma-input has-prefix"></div></div>
+          <div class="field">
+            <label>Down Payment</label>
+            <div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="bvr-down" placeholder="80,000" inputmode="numeric" class="comma-input has-prefix" oninput="showDpPopup(this)"></div>
+            <div class="dp-question" id="bvr-dp-popup">
+              <p>If renting, will you invest this down payment?</p>
+              <div class="dp-btns">
+                <button class="dp-btn" id="dp-btn-yes" onclick="selectDpInvest('yes')">Yes — invest it</button>
+                <button class="dp-btn" id="dp-btn-no"  onclick="selectDpInvest('no')">No — keep as cash</button>
+              </div>
+            </div>
+          </div>
+          <div class="field"><label>Interest Rate (%)</label><div class="input-wrap"><span class="input-prefix">%</span><input type="number" id="bvr-rate" placeholder="6.5" step="0.01" class="has-prefix"></div></div>
+          <div class="field"><label>Loan Term</label><div class="input-wrap"><select id="bvr-term"><option value="30">30 Years</option><option value="20">20 Years</option><option value="15">15 Years</option><option value="10">10 Years</option></select></div></div>
+          <div class="field"><label>Annual Home Appreciation (%)</label><div class="input-wrap"><span class="input-prefix">%</span><input type="number" id="bvr-appr" placeholder="3" step="0.1" class="has-prefix"></div></div>
+          <div class="field"><label>Include Taxes &amp; Insurance?</label><div class="input-wrap"><select id="bvr-tai" onchange="toggleBvrTai()"><option value="no">No — use estimates</option><option value="yes">Yes — enter my own</option></select></div></div>
+          <div class="bvr-opt-fields" id="bvr-optional">
+            <div class="field"><label>Annual Property Taxes</label><div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="bvr-tax" placeholder="4,800" inputmode="numeric" class="comma-input has-prefix"></div></div>
+            <div class="field"><label>Annual Homeowners Insurance</label><div class="input-wrap"><span class="input-prefix">$</span><input type="text" id="bvr-ins" placeholder="1,200" inputmode="numeric" class="comma-input has-prefix"></div></div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card">
+        <div class="card-title">Timeframe</div>
+        <div class="form-grid">
+          <div class="field full"><label>Analysis Period (Years)</label><div class="input-wrap"><input type="number" id="bvr-years" placeholder="10" min="1" max="50"></div></div>
+        </div>
+        <button class="calc-btn" onclick="calcBuyVsRent()">Compare</button>
+      </div>
+
+      <!-- BVR RESULTS -->
+      <div id="bvr-results" class="bvr-results">
+        <hr class="results-rule">
+        <div class="results-eyebrow">Your Results</div>
+        <div class="results-headline">Buy vs Rent Comparison</div>
+
+        <button class="qualify-banner" onclick="window.open('https://mtgxps.mymortgage-online.com/GavinHamilton.html','_blank')">
+          <div><div class="qualify-banner-text">Find Out What You Qualify For</div><div class="qualify-banner-sub">Free soft-pull analysis — no commitment</div></div>
+          <span class="qualify-banner-arrow">Get Started →</span>
+        </button>
+
+        <!-- AT A GLANCE SUMMARY -->
+        <div class="bvr-summary-card">
+          <div class="bvr-summary-title">At a Glance</div>
+          <div class="bvr-summary-row">
+            <div class="bvr-summary-col"><div class="bvr-summary-label">Monthly Rent <span class="bvr-summary-period">(today)</span></div><div class="bvr-summary-amount" id="sum-rent-now">—</div></div>
+            <div class="bvr-summary-vs">vs</div>
+            <div class="bvr-summary-col"><div class="bvr-summary-label">Est. Mortgage PITI <span class="bvr-summary-period">(today)</span></div><div class="bvr-summary-amount" id="sum-mortgage-now">—</div></div>
+          </div>
+          <div class="bvr-summary-divider"></div>
+          <div class="bvr-summary-row">
+            <div class="bvr-summary-col"><div class="bvr-summary-label">Est. Rent <span class="bvr-summary-period" id="sum-label-fut-rent">(in 10 years)</span></div><div class="bvr-summary-amount" id="sum-rent-future">—</div></div>
+            <div class="bvr-summary-vs">vs</div>
+            <div class="bvr-summary-col"><div class="bvr-summary-label">Est. Mortgage PITI <span class="bvr-summary-period" id="sum-label-fut-mort">(in 10 years)</span></div><div class="bvr-summary-amount" id="sum-mortgage-future">—</div></div>
+          </div>
+          <div class="bvr-summary-divider"></div>
+          <div class="bvr-summary-row">
+            <div class="bvr-summary-col"><div class="bvr-summary-label">Net Worth — Renting <span class="bvr-summary-period" id="sum-label-nw-rent">(in 10 years)</span></div><div class="bvr-summary-amount" id="sum-nw-rent">—</div></div>
+            <div class="bvr-summary-vs">vs</div>
+            <div class="bvr-summary-col"><div class="bvr-summary-label">Net Worth — Buying <span class="bvr-summary-period" id="sum-label-nw-buy">(in 10 years)</span></div><div class="bvr-summary-amount" id="sum-nw-buy">—</div></div>
+          </div>
+          <p class="bvr-summary-note">↓ Full breakdown below</p>
+        </div>
+
+        <!-- CURRENT payments -->
+        <div class="bvr-current-grid">
+          <div class="bvr-result-card">
+            <div class="bvr-result-header h-rent">Current Rent</div>
+            <div class="bvr-metric">
+              <div class="bvr-metric-label">Monthly Rent</div>
+              <div class="bvr-metric-value" id="bvr-r-current">—</div>
+              <div class="bvr-metric-sub">/ month, today</div>
+              <div class="bvr-sub-lines" style="margin-top:.75rem">
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Principal &amp; Interest</span><span class="bvr-sub-value dash">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Est. Property Tax</span><span class="bvr-sub-value dash">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Est. Homeowners Ins.</span><span class="bvr-sub-value dash">—</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bvr-result-card">
+            <div class="bvr-result-header h-buy">Current Mortgage</div>
+            <div class="bvr-metric">
+              <div class="bvr-metric-label">Total Monthly Payment</div>
+              <div class="bvr-metric-value" id="bvr-b-current">—</div>
+              <div class="bvr-metric-sub">/ month, today</div>
+              <div class="bvr-apr-line" id="bvr-b-apr">—</div>
+              <div class="bvr-sub-lines" style="margin-top:.75rem">
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Principal &amp; Interest</span><span class="bvr-sub-value" id="bvr-b-cur-pi">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Est. Property Tax</span><span class="bvr-sub-value" id="bvr-b-cur-tax">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Est. Homeowners Ins.</span><span class="bvr-sub-value" id="bvr-b-cur-ins">—</span></div>
+                <div class="bvr-sub-line" id="bvr-b-cur-pmi-row" style="display:none"><span class="bvr-sub-label">Est. PMI</span><span class="bvr-sub-value" id="bvr-b-cur-pmi">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="pmi-disclaimer" id="bvr-cur-pmi-disclaimer">
+          <p><strong>Monthly mortgage insurance required (less than 20% down).</strong> Estimate only — contact a lending professional for accurate quote.</p>
+        </div>
+
+        <div class="bvr-years-divider" id="bvr-years-divider-text">— Years From Now —</div>
+        <div class="bvr-rent-exceeds" id="bvr-rent-exceeds" style="display:none"><span id="bvr-rent-exceeds-text"></span></div>
+
+        <!-- FUTURE payments & net worth -->
+        <div class="bvr-current-grid">
+          <div class="bvr-result-card">
+            <div class="bvr-result-header h-rent">Renting</div>
+            <div class="bvr-metric">
+              <div class="bvr-metric-label">Future Est. Rent Payment</div>
+              <div class="bvr-metric-value" id="bvr-r-futrent">—</div>
+              <div class="bvr-sub-lines" style="margin-top:.75rem">
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Annual increase</span><span class="bvr-sub-value" id="bvr-r-inc">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">After <span id="bvr-r-yrs"></span> years</span><span class="bvr-sub-value" id="bvr-r-futrent2">—</span></div>
+              </div>
+            </div>
+            <div class="bvr-metric">
+              <div class="bvr-metric-label">Est. Net Worth (Investments)</div>
+              <div class="bvr-metric-value" id="bvr-r-networth">—</div>
+              <div class="bvr-sub-lines" style="margin-top:.75rem">
+                <div class="bvr-sub-line dp-note" id="bvr-r-initinv-row" style="display:none"><span class="bvr-sub-label">Initial investment (down pmt)</span><span class="bvr-sub-value" id="bvr-r-initinv-val">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Monthly invested</span><span class="bvr-sub-value" id="bvr-r-moinv">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Total contributions</span><span class="bvr-sub-value" id="bvr-r-contrib">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Investment return</span><span class="bvr-sub-value" id="bvr-r-invrate">—</span></div>
+                <div class="bvr-sub-line dp-note" id="bvr-r-dp-row" style="display:none"><span class="bvr-sub-label" id="bvr-r-dp-label">Down payment treatment</span><span class="bvr-sub-value" id="bvr-r-dp-val">—</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="bvr-result-card">
+            <div class="bvr-result-header h-buy">Buying</div>
+            <div class="bvr-metric">
+              <div class="bvr-metric-label">Future Est. Mortgage Payment</div>
+              <div class="bvr-metric-value" id="bvr-b-futpmt">—</div>
+              <div class="bvr-sub-lines" style="margin-top:.75rem">
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Principal &amp; Interest (fixed)</span><span class="bvr-sub-value" id="bvr-b-pi">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Est. future property tax</span><span class="bvr-sub-value" id="bvr-b-tax">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Est. future homeowners ins.</span><span class="bvr-sub-value" id="bvr-b-ins">—</span></div>
+                <div class="bvr-sub-line" id="bvr-b-fut-pmi-row" style="display:none"><span class="bvr-sub-label">Est. PMI</span><span class="bvr-sub-value" id="bvr-b-fut-pmi">—</span></div>
+              </div>
+            </div>
+            <div class="bvr-metric">
+              <div class="bvr-metric-label">Est. Net Worth (Home Equity)</div>
+              <div class="bvr-metric-value" id="bvr-b-networth">—</div>
+              <div class="bvr-sub-lines" style="margin-top:.75rem">
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Future home value</span><span class="bvr-sub-value" id="bvr-b-futval">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Remaining loan balance</span><span class="bvr-sub-value" id="bvr-b-balance">—</span></div>
+                <div class="bvr-sub-line"><span class="bvr-sub-label">Home equity</span><span class="bvr-sub-value green" id="bvr-b-equity">—</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="verdict-card" id="bvr-verdict"><div class="verdict-text" id="bvr-verdict-text"></div></div>
+
+        <div id="bvr-charts-section" style="display:none">
+          <div class="fin-section-label" style="margin-top:1.5rem">Net Worth Over Time — Renting &amp; Investing</div>
+          <div class="bvr-chart-wrap"><canvas id="bvr-rent-chart"></canvas></div>
+          <div class="chart-legend" style="margin-bottom:1.5rem">
+            <span><span class="legend-dot" style="background:rgba(184,146,74,.4)"></span>Total Contributions</span>
+            <span><span class="legend-dot" style="background:#b8924a"></span>Investment Portfolio Value</span>
+          </div>
+          <div class="fin-section-label">Net Worth Over Time — Buying</div>
+          <div class="bvr-chart-wrap"><canvas id="bvr-buy-chart"></canvas></div>
+          <div class="chart-legend">
+            <span><span class="legend-dot" style="background:#1a6640"></span>Home Value</span>
+            <span><span class="legend-dot" style="background:#b03020"></span>Remaining Loan Balance</span>
+            <span><span class="legend-dot" style="background:#b8924a"></span>Home Equity</span>
+          </div>
+        </div>
+      </div><!-- /bvr-results -->
+
+    </div><!-- /calc-inner -->
+    <div class="container-footer">
+      <button class="reset-btn" onclick="resetBvr()">↺ Reset</button>
+    </div>
+  </div><!-- /container -->
+
+  <div class="disclaimer">
+    <p>© Mortgage Calculators by Gavin Hamilton &nbsp;|&nbsp; NMLS #857506</p>
+    <p>For educational and informational purposes only. Net worth projections are estimates and do not account for all costs of homeownership or renting.</p>
+    <p>Future property tax and insurance estimates assume appreciation at the same rate as the input annual home appreciation.</p>
+    <p>*APR estimate includes origination fees of $1,525, settlement fees, a 1% discount point, and 15 days prepaid interest (Portland, Oregon).</p>
+  </div>
+
+</div><!-- /app -->
+
+<div class="alert-overlay" id="alert-modal">
+  <div class="alert-box"><div class="alert-icon" id="alert-icon">Input Required</div><div class="alert-msg" id="alert-msg"></div><button class="alert-btn" onclick="closeAlert()">OK</button></div>
+</div>
+<div class="contact-overlay" id="contact-modal">
+  <div class="contact-modal">
+    <div class="contact-modal-title">I'm here when you're ready</div>
+    <div class="contact-modal-body"><span class="contact-detail"><a href="mailto:ghamilton@mtgxps.com">ghamilton@mtgxps.com</a></span><br><span class="contact-detail"><a href="tel:5035178983">503.517.8983</a></span></div>
+    <button class="contact-close-btn" onclick="closeContactModal()">Back to Calculator</button>
+  </div>
+</div>
+
+<script src="shared.js"></script>
+<script>
+let dpInvestChoice=null;
+let bvrRentChartInst=null, bvrBuyChartInst=null;
+
+function toggleBvrTai(){ document.getElementById('bvr-optional').classList.toggle('visible',document.getElementById('bvr-tai').value==='yes'); }
+function showDpPopup(input){
+  const val=input.value.replace(/,/g,'');
+  const popup=document.getElementById('bvr-dp-popup');
+  if(parseFloat(val)>0) popup.classList.add('visible');
+  else { popup.classList.remove('visible'); dpInvestChoice=null; document.getElementById('dp-btn-yes').classList.remove('selected'); document.getElementById('dp-btn-no').classList.remove('selected'); }
+}
+function selectDpInvest(choice){
+  dpInvestChoice=choice;
+  document.getElementById('dp-btn-yes').classList.toggle('selected',choice==='yes');
+  document.getElementById('dp-btn-no').classList.toggle('selected',choice==='no');
+}
+
+function calcBuyVsRent(){
+  const rent=parseVal('bvr-rent');
+  const rentInc=parseFloat(document.getElementById('bvr-rent-inc').value)/100||0;
+  const invest=parseVal('bvr-invest');
+  const invRate=parseFloat(document.getElementById('bvr-inv-rate').value)/100||0;
+  const price=parseVal('bvr-price');
+  const down=parseVal('bvr-down');
+  const rate=parseFloat(document.getElementById('bvr-rate').value)/100||0;
+  const term=parseInt(document.getElementById('bvr-term').value);
+  const appr=parseFloat(document.getElementById('bvr-appr').value)/100||0;
+  const tai=document.getElementById('bvr-tai').value;
+  const years=parseInt(document.getElementById('bvr-years').value)||10;
+
+  if(!rent||!price||!down||!rate) return;
+  const loan=price-down;
+  if(checkLTV(loan,price)) return;
+
+  const r=rate/12, n=term*12;
+  const pi=loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+
+  let annTax0, annIns0;
+  if(tai==='yes'){annTax0=parseVal('bvr-tax');annIns0=parseVal('bvr-ins');}
+  else{annTax0=price*0.012;annIns0=loan*0.0025;}
+
+  const futMonthlyTax=(annTax0*Math.pow(1+appr,years))/12;
+  const futMonthlyIns=(annIns0*Math.pow(1+appr,years))/12;
+  const futHomeValue=price*Math.pow(1+appr,years);
+  const monthsPaid=Math.min(years*12,n);
+  const remainBal=Math.max(loan*Math.pow(1+r,monthsPaid)-pi*(Math.pow(1+r,monthsPaid)-1)/r,0);
+  const homeEquity=futHomeValue-remainBal;
+
+  const invR=invRate/12, invMonths=years*12;
+  let dpFV=0, dpLumpSum=0;
+
+  if(dpInvestChoice==='yes'){ dpFV=invR>0?down*Math.pow(1+invR,invMonths):down; document.getElementById('bvr-r-initinv-row').style.display='flex'; document.getElementById('bvr-r-initinv-val').textContent=fmt2(down); document.getElementById('bvr-r-dp-row').style.display='none'; }
+  else if(dpInvestChoice==='no'){ dpLumpSum=down; document.getElementById('bvr-r-initinv-row').style.display='none'; document.getElementById('bvr-r-dp-label').textContent='Down pmt kept as cash'; document.getElementById('bvr-r-dp-val').textContent=fmt(down)+' added to net worth'; document.getElementById('bvr-r-dp-row').style.display='flex'; }
+  else { document.getElementById('bvr-r-initinv-row').style.display='none'; document.getElementById('bvr-r-dp-row').style.display='none'; }
+
+  const monthlyFV=invR>0?invest*(Math.pow(1+invR,invMonths)-1)/invR:invest*invMonths;
+  const totalContrib=(dpInvestChoice==='yes'?down:0)+invest*invMonths;
+  const investFV=monthlyFV+dpFV+dpLumpSum;
+  const futRent=rent*Math.pow(1+rentInc,years);
+
+  // populate rent side
+  document.getElementById('bvr-r-current').textContent=fmt2(rent);
+  document.getElementById('bvr-r-futrent').textContent=fmt2(futRent);
+  document.getElementById('bvr-r-futrent2').textContent=fmt2(futRent);
+  document.getElementById('bvr-r-inc').textContent=(rentInc*100).toFixed(1)+'% / yr';
+  document.getElementById('bvr-r-yrs').textContent=years;
+  document.getElementById('bvr-r-networth').textContent=fmt(investFV);
+  document.getElementById('bvr-r-moinv').textContent=fmt2(invest);
+  document.getElementById('bvr-r-contrib').textContent=fmt(totalContrib);
+  document.getElementById('bvr-r-invrate').textContent=(invRate*100).toFixed(1)+'% / yr';
+
+  // populate buy side — current
+  const curMonthlyTax=annTax0/12, curMonthlyIns=annIns0/12;
+  const ltv=loan/price, needsPMI=ltv>0.80;
+  const curPMI=needsPMI?(loan*0.006)/12:0;
+  const currentMortgage=pi+curMonthlyTax+curMonthlyIns+curPMI;
+  document.getElementById('bvr-b-current').textContent=fmt2(currentMortgage);
+  document.getElementById('bvr-b-cur-pi').textContent=fmt2(pi);
+  document.getElementById('bvr-b-cur-tax').textContent=fmt2(curMonthlyTax);
+  document.getElementById('bvr-b-cur-ins').textContent=fmt2(curMonthlyIns);
+  document.getElementById('bvr-b-apr').textContent=fmtAPR(calcAPR(loan,rate,term,price,curPMI));
+
+  const curPmiRow=document.getElementById('bvr-b-cur-pmi-row');
+  const curPmiDisc=document.getElementById('bvr-cur-pmi-disclaimer');
+  if(needsPMI){document.getElementById('bvr-b-cur-pmi').textContent=fmt2(curPMI);curPmiRow.style.display='flex';curPmiDisc.classList.add('show');}
+  else{curPmiRow.style.display='none';curPmiDisc.classList.remove('show');}
+
+  // future buy
+  const futLTV=remainBal/price, futNeedsPMI=needsPMI&&futLTV>0.78;
+  const futPMI=futNeedsPMI?(loan*0.006)/12:0;
+  const futTotalPmtWithPMI=pi+futMonthlyTax+futMonthlyIns+futPMI;
+  if(futNeedsPMI){document.getElementById('bvr-b-fut-pmi').textContent=fmt2(futPMI);document.getElementById('bvr-b-fut-pmi-row').style.display='flex';}
+  else document.getElementById('bvr-b-fut-pmi-row').style.display='none';
+
+  document.getElementById('bvr-b-futpmt').textContent=fmt2(futTotalPmtWithPMI);
+  document.getElementById('bvr-b-pi').textContent=fmt2(pi);
+  document.getElementById('bvr-b-tax').textContent=fmt2(futMonthlyTax);
+  document.getElementById('bvr-b-ins').textContent=fmt2(futMonthlyIns);
+  document.getElementById('bvr-b-networth').textContent=fmt(homeEquity);
+  document.getElementById('bvr-b-futval').textContent=fmt(futHomeValue);
+  document.getElementById('bvr-b-balance').textContent=fmt(remainBal);
+  document.getElementById('bvr-b-equity').textContent=fmt(homeEquity);
+
+  // summary card
+  const yrsLabel=years===1?'1 year':years+' years';
+  const fp='(in '+yrsLabel+')';
+  document.getElementById('sum-rent-now').textContent=fmt2(rent);
+  document.getElementById('sum-mortgage-now').textContent=fmt2(currentMortgage);
+  document.getElementById('sum-rent-future').textContent=fmt2(futRent);
+  document.getElementById('sum-mortgage-future').textContent=fmt2(futTotalPmtWithPMI);
+  document.getElementById('sum-nw-rent').textContent=fmt(investFV);
+  document.getElementById('sum-nw-buy').textContent=fmt(homeEquity);
+  document.getElementById('sum-label-fut-rent').textContent=fp;
+  document.getElementById('sum-label-fut-mort').textContent=fp;
+  document.getElementById('sum-label-nw-rent').textContent=fp;
+  document.getElementById('sum-label-nw-buy').textContent=fp;
+  document.getElementById('bvr-years-divider-text').textContent=years+' Years From Now';
+
+  const rentExcess=futRent-futTotalPmtWithPMI;
+  const exceedsEl=document.getElementById('bvr-rent-exceeds');
+  if(rentExcess>0){document.getElementById('bvr-rent-exceeds-text').innerHTML='Future estimated rent exceeds future estimated mortgage by <em>'+fmt2(rentExcess)+' / month</em>';exceedsEl.style.display='block';}
+  else exceedsEl.style.display='none';
+
+  const diff=homeEquity-investFV;
+  const vt=document.getElementById('bvr-verdict-text');
+  if(diff>0) vt.innerHTML='After '+years+' years, <span class="v-amount">buying</span> leaves you with an estimated <span class="v-amount">'+fmt(Math.abs(diff))+' more</span> in net worth than renting and investing.';
+  else if(diff<0) vt.innerHTML='After '+years+' years, <span class="v-amount">renting</span> and investing the difference leaves you with an estimated <span class="v-amount">'+fmt(Math.abs(diff))+' more</span> in net worth than buying.';
+  else vt.innerHTML='After '+years+' years, buying and renting result in approximately the same estimated net worth.';
+  document.getElementById('bvr-verdict').classList.add('show');
+
+  drawBvrCharts({loan,price,down,rate,term,appr,invest,invRate,years,dpInvestChoice});
+  document.getElementById('bvr-results').classList.add('show');
+  setTimeout(()=>document.getElementById('bvr-results').scrollIntoView({behavior:'smooth',block:'start'}),100);
+}
+
+function drawBvrCharts({loan,price,down,rate,term,appr,invest,invRate,years,dpInvestChoice}){
+  const labels=[],rentContribData=[],rentPortfolioData=[];
+  const buyHomeValueData=[],buyBalanceData=[],buyEquityData=[];
+  const r=rate/12,n=term*12;
+  const pi=loan*r*Math.pow(1+r,n)/(Math.pow(1+r,n)-1);
+  const invR=invRate/12;
+
+  for(let y=1;y<=years;y++){
+    labels.push('Yr '+y);
+    const m=y*12;
+    const dpContrib=dpInvestChoice==='yes'?down:0;
+    const dpFV=dpInvestChoice==='yes'?(invR>0?down*Math.pow(1+invR,m):down):(dpInvestChoice==='no'?down:0);
+    const monthlyFV=invR>0?invest*(Math.pow(1+invR,m)-1)/invR:invest*m;
+    rentContribData.push(Math.round(dpContrib+invest*m+(dpInvestChoice==='no'?down:0)));
+    rentPortfolioData.push(Math.round(monthlyFV+dpFV));
+    const monthsPaid=Math.min(m,n);
+    const remBal=Math.max(loan*Math.pow(1+r,monthsPaid)-pi*(Math.pow(1+r,monthsPaid)-1)/r,0);
+    const homeVal=price*Math.pow(1+appr,y);
+    buyHomeValueData.push(Math.round(homeVal));
+    buyBalanceData.push(Math.round(remBal));
+    buyEquityData.push(Math.round(homeVal-remBal));
+  }
+
+  const opts={
+    responsive:true,maintainAspectRatio:false,
+    interaction:{mode:'index',intersect:false},
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+ctx.dataset.label+': $'+ctx.parsed.y.toLocaleString()}}},
+    scales:{
+      x:{grid:{color:'rgba(74,74,74,.08)'},ticks:{color:'#aaa',font:{size:10}}},
+      y:{grid:{color:'rgba(74,74,74,.08)'},ticks:{color:'#aaa',font:{size:10},callback:v=>'$'+(v>=1000000?(v/1000000).toFixed(1)+'M':v>=1000?(v/1000).toFixed(0)+'k':v)}}
+    }
+  };
+
+  document.getElementById('bvr-charts-section').style.display='block';
+  if(bvrRentChartInst){bvrRentChartInst.destroy();bvrRentChartInst=null;}
+  bvrRentChartInst=new Chart(document.getElementById('bvr-rent-chart').getContext('2d'),{
+    type:'line',data:{labels,datasets:[
+      {label:'Total Contributions',data:rentContribData,borderColor:'rgba(184,146,74,.6)',backgroundColor:'rgba(184,146,74,.06)',fill:true,tension:.3,pointRadius:2},
+      {label:'Investment Portfolio Value',data:rentPortfolioData,borderColor:'#b8924a',backgroundColor:'rgba(184,146,74,.1)',fill:false,tension:.3,pointRadius:2}
+    ]},options:opts
+  });
+  if(bvrBuyChartInst){bvrBuyChartInst.destroy();bvrBuyChartInst=null;}
+  bvrBuyChartInst=new Chart(document.getElementById('bvr-buy-chart').getContext('2d'),{
+    type:'line',data:{labels,datasets:[
+      {label:'Home Value',data:buyHomeValueData,borderColor:'#1a6640',backgroundColor:'rgba(26,102,64,.06)',fill:false,tension:.3,pointRadius:2},
+      {label:'Remaining Loan Balance',data:buyBalanceData,borderColor:'#b03020',backgroundColor:'rgba(176,48,32,.06)',fill:false,tension:.3,pointRadius:2},
+      {label:'Home Equity',data:buyEquityData,borderColor:'#b8924a',backgroundColor:'rgba(184,146,74,.1)',fill:true,tension:.3,pointRadius:2}
+    ]},options:opts
+  });
+}
+
+function resetBvr(){
+  document.querySelectorAll('input').forEach(i=>i.value='');
+  document.getElementById('bvr-results').classList.remove('show');
+  document.getElementById('bvr-verdict').classList.remove('show');
+  document.getElementById('bvr-charts-section').style.display='none';
+  document.getElementById('bvr-rent-exceeds').style.display='none';
+  document.getElementById('bvr-dp-popup').classList.remove('visible');
+  document.getElementById('bvr-r-dp-row').style.display='none';
+  document.getElementById('bvr-r-initinv-row').style.display='none';
+  document.getElementById('dp-btn-yes').classList.remove('selected');
+  document.getElementById('dp-btn-no').classList.remove('selected');
+  document.getElementById('bvr-cur-pmi-disclaimer').classList.remove('show');
+  document.getElementById('bvr-b-cur-pmi-row').style.display='none';
+  document.getElementById('bvr-b-fut-pmi-row').style.display='none';
+  if(bvrRentChartInst){bvrRentChartInst.destroy();bvrRentChartInst=null;}
+  if(bvrBuyChartInst){bvrBuyChartInst.destroy();bvrBuyChartInst=null;}
+  dpInvestChoice=null;
+}
+</script>
+</body>
+</html>
